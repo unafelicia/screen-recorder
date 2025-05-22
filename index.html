@@ -1,15 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Screen Recorder for Survey</title>
+  <title>Screen Recorder Upload</title>
 </head>
 <body>
   <h2>Screen Recording Consent</h2>
   <p>
     By clicking start, you agree to allow your screen to be recorded for up to 15 minutes for academic research purposes.
-    No personal information will be collected.
   </p>
 
   <button id="start">Start Recording</button>
@@ -35,7 +35,6 @@
       document.getElementById('start').disabled = true;
       document.getElementById('stop').disabled = false;
 
-      // Stop after 15 minutes
       setTimeout(() => {
         if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
@@ -52,13 +51,17 @@
       const formData = new FormData();
       formData.append('file', blob, 'recording.webm');
 
-      const uploadUrl = 'https://your-upload-endpoint.com/upload'; // ← Replace this
-
       try {
-        await fetch(uploadUrl, {
+        const res = await fetch('https://uploadthing.com/api/uploadFiles', {
           method: 'POST',
+          headers: {
+            'x-uploadthing-api-key': '7a9478c8-7f95-4608-bb08-bd1819d56846',
+            'x-uploadthing-package': '@uploadthing/react',
+          },
           body: formData
         });
+
+        if (!res.ok) throw new Error('Upload failed');
         alert('Upload successful!');
       } catch (e) {
         alert('Upload failed. Please contact the researcher.');
