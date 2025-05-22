@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen Recorder for Survey</title>
+</head>
+<body>
+  <h2>Screen Recording Consent</h2>
+  <p>
+    By clicking start, you agree to allow your screen to be recorded for up to 15 minutes for academic research purposes.
+    No personal information will be collected.
+  </p>
+
+  <button id="start">Start Recording</button>
+  <button id="stop" disabled>Stop & Upload</button>
+  <video id="preview" controls autoplay muted style="width: 100%; max-width: 600px;"></video>
+
+  <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    document.getElementById('start').onclick = async () => {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      document.getElementById('preview').srcObject = stream;
+
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+      };
+      mediaRecorder.onstop = uploadVideo;
+
+      mediaRecorder.start();
+      document.getElementById('start').disabled = true;
+      document.getElementById('stop').disabled = false;
+
+      // Stop after 15 minutes
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }, 15 * 60 * 1000);
+    };
+
+    document.getElementById('stop').onclick = () => {
+      mediaRecorder.stop();
+    };
+
+    async function uploadVideo() {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.webm');
+
+      const uploadUrl = 'https://your-upload-endpoint.com/upload'; // ← Replace this
+
+      try {
+        await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData
+        });
+        alert('Upload successful!');
+      } catch (e) {
+        alert('Upload failed. Please contact the researcher.');
+      }
+
+      document.getElementById('start').disabled = false;
+      document.getElementById('stop').disabled = true;
+    }
+  </script>
+</body>
+</html>
