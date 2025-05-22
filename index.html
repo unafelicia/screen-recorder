@@ -4,13 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Screen Recorder Upload</title>
+  <title>Screen Recorder with File.io Upload</title>
 </head>
 <body>
   <h2>Screen Recording Consent</h2>
-  <p>
-    By clicking start, you agree to allow your screen to be recorded for up to 15 minutes for academic research purposes.
-  </p>
+  <p>By clicking start, you agree to allow your screen to be recorded for up to 15 minutes for academic research purposes.</p>
 
   <button id="start">Start Recording</button>
   <button id="stop" disabled>Stop & Upload</button>
@@ -52,19 +50,19 @@
       formData.append('file', blob, 'recording.webm');
 
       try {
-        const res = await fetch('https://uploadthing.com/api/uploadFiles', {
+        const res = await fetch('https://file.io/?expires=14d', {
           method: 'POST',
-          headers: {
-            'x-uploadthing-api-key': '7a9478c8-7f95-4608-bb08-bd1819d56846',
-            'x-uploadthing-package': '@uploadthing/react',
-          },
           body: formData
         });
-
-        if (!res.ok) throw new Error('Upload failed');
-        alert('Upload successful!');
+        const result = await res.json();
+        if (result.success) {
+          alert('Upload successful! Download link: ' + result.link);
+          console.log('Download URL:', result.link);
+        } else {
+          throw new Error(result.message);
+        }
       } catch (e) {
-        alert('Upload failed. Please contact the researcher.');
+        alert('Upload failed. Please try again.');
       }
 
       document.getElementById('start').disabled = false;
