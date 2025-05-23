@@ -15,10 +15,11 @@
   <video id="preview" controls autoplay muted style="width: 100%; max-width: 600px;"></video>
 
   <script>
-    let mediaRecorder;
-    let recordedChunks = [];
+  let mediaRecorder;
+  let recordedChunks = [];
 
-    document.getElementById('start').onclick = async () => {
+  document.getElementById('start').onclick = async () => {
+    try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       document.getElementById('preview').srcObject = stream;
 
@@ -36,38 +37,56 @@
       setTimeout(() => {
         if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
+          alert("Recording stopped automatically after 15 minutes.");
         }
       }, 15 * 60 * 1000);
-    };
+    } catch (error) {
+      alert("Failed to start screen recording. Please check your permissions.");
+      console.error("Error starting screen recording:", error);
+    }
+  };
 
-    document.getElementById('stop').onclick = () => {
-      mediaRecorder.stop();
-    };
-
-    async function uploadVideo() {
-      const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      const formData = new FormData();
-      formData.append('file', blob, 'recording.webm');
-
-      try {
-        const res = await fetch('https://file.io/?expires=14d', {
-          method: 'POST',
-          body: formData
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert('Upload successful! Download link: ' + result.link);
-          console.log('Download URL:', result.link);
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (e) {
-        alert('Upload failed. Please try again.');
+  document.getElementById('stop').onclick = () => {
+    try {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      } else {
+        console.error("MediaRecorder is not recording or not initialized.");
       }
+    } catch (error) {
+      console.error("Error stopping the MediaRecorder:", error);
+    }
+  };
 
+  async function uploadVideo() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const formData = new FormData();
+    formData.append('file', blob, 'recording.webm');
+
+    document.getElementById('start').disabled = true; // Prevent starting a new recording during upload
+    try {
+      const res = await fetch('https://file.io/?expires=14d', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Network error during upload.");
+
+      const result = await res.json();
+      if (result.success) {
+        alert('Upload successful! Download link: ' + result.link);
+        console.log('Download URL:', result.link);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (e) {
+      alert('Upload failed. Please try again.');
+      console.error("Error uploading video:", e);
+    } finally {
       document.getElementById('start').disabled = false;
       document.getElementById('stop').disabled = true;
     }
-  </script>
+  }
+</script>
 </body>
 </html>
